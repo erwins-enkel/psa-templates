@@ -21,8 +21,7 @@ Sichtbarer Produktname: **erwins enkel — PSA Templates**.
 
 > **`impressum.html` und `datenschutz.html` spiegeln die Angaben von
 > `https://www.erwins-enkel.dev/impressum`.** Ändern sich dort Anschrift,
-> Geschäftsführung oder Registerdaten, hier nachziehen. HRB und USt-ID stehen
-> bewusst als `[bitte ergänzen]` — genau so wie auf der Firmenseite.
+> Geschäftsführung oder Registerdaten, hier nachziehen.
 
 ## Deploy
 
