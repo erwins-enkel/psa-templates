@@ -15,6 +15,9 @@ Browser-basierter Template-Generator fuer professionelle E-Mail-Vorlagen in Auto
 - 4 Style-Varianten (Modern Card, Clean Minimal, Corporate Classic, Internal Minimal)
 - Autotask-Zonen: Variablennamen entstehen sprachrichtig zur gewaehlten Zone
   (`ww18` deutsch, `ww12` spanisch, uebrige englisch) und werden beim Zonenwechsel uebersetzt
+- [Kudos](https://github.com/erwins-enkel/kudos)-Bewertungslinks: mit eingetragenem
+  Kudos-Slug bekommen Ticket-Note, Ticket geschlossen und Umfrage drei Score-Links
+  (Section „Kudos-Bewertung", je Vorlage schaltbar)
 - Live-Preview (Desktop / Mobile)
 - Code-Export mit PSA-Variablen — als HTML **und** als Plain-Text fuer das
   Autotask-Feld „Nur Text"

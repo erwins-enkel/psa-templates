@@ -222,6 +222,12 @@
      "name": { "en": "Contact: Phone", "de": "Kontakt: Telefon", "es": "Contacto: Teléfono" },
      "description": "Telefon des Ansprechpartners",
      "example": "+49 30 555 1234"
+    },
+    {
+     "key": "contact.id",
+     "name": { "en": "Contact: ID", "de": "Kontakt: ID", "es": "Contacto: Id." },
+     "description": "Interne Kontakt-ID — für Deeplinks, z.B. Kudos-Bewertungslinks",
+     "example": "29684"
     }
    ]
   },

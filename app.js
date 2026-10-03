@@ -274,6 +274,10 @@
     // eine leer gelassene URL bleibt also leer.
     autotaskUrl: zoneUrlFor(AUTOTASK_ZONES[0]),
     autotaskLinkText: 'In Autotask öffnen',
+    // Kudos-Bewertungsblock (Tenant-Slug). Leer = kein Block, Ausgabe wie ohne
+    // Kudos. Host leer = Kudos-Produktion, siehe kudosOrigin().
+    kudosSlug: '',
+    kudosHost: '',
     // Sprache der Bedienoberfläche. Liegt hier, damit saveToLocalStorage() sie
     // ohne Sonderweg mitschreibt — applyConfig() nimmt sie aber bewusst NICHT
     // aus einer geladenen Nutzlast, siehe dort.
@@ -331,11 +335,14 @@
       name: 'Ticket-Note an Kunde',
       audience: 'customer',
       subject: '[Ticket: Notiztitel] / [Ticket: Nummer]',
+      // n-Parameter der Kudos-Links: Notiz → updated, Abschluss → resolved.
+      kudosNotification: 'updated',
       sections: {
         previewText: true,
         header: true,
         ticketInfo: true,
         messageBody: true,
+        kudosRating: true,
         ctaButton: true,
         bookingButton: false,
         kundenportal: false,
@@ -364,6 +371,7 @@
         header: true,
         ticketInfo: true,
         messageBody: true,
+        kudosRating: false,
         ctaButton: true,
         bookingButton: false,
         kundenportal: false,
@@ -392,6 +400,7 @@
         header: true,
         ticketInfo: true,
         messageBody: true,
+        kudosRating: false,
         ctaButton: true,
         bookingButton: false,
         kundenportal: false,
@@ -415,11 +424,13 @@
       name: 'Ticket geschlossen',
       audience: 'customer',
       subject: 'Ihr Ticket [Ticket: Nummer] wurde gelöst',
+      kudosNotification: 'resolved',
       sections: {
         previewText: true,
         header: true,
         ticketInfo: true,
         messageBody: true,
+        kudosRating: true,
         ctaButton: true,
         bookingButton: false,
         kundenportal: false,
@@ -448,6 +459,7 @@
         header: true,
         ticketInfo: true,
         messageBody: true,
+        kudosRating: false,
         ctaButton: true,
         bookingButton: false,
         kundenportal: false,
@@ -476,6 +488,7 @@
         header: true,
         ticketInfo: true,
         messageBody: true,
+        kudosRating: false,
         ctaButton: true,
         bookingButton: false,
         kundenportal: false,
@@ -504,6 +517,7 @@
         header: true,
         ticketInfo: true,
         messageBody: true,
+        kudosRating: false,
         ctaButton: true,
         bookingButton: false,
         kundenportal: false,
@@ -532,6 +546,7 @@
         header: true,
         ticketInfo: true,
         messageBody: true,
+        kudosRating: false,
         ctaButton: false,
         bookingButton: false,
         kundenportal: false,
@@ -555,11 +570,13 @@
       name: 'Kundenzufriedenheits-Umfrage',
       audience: 'customer',
       subject: 'Wie war unser Service? Ticket [Ticket: Nummer]',
+      kudosNotification: 'resolved',
       sections: {
         previewText: true,
         header: true,
         ticketInfo: true,
         messageBody: true,
+        kudosRating: true,
         ctaButton: true,
         bookingButton: false,
         kundenportal: false,
@@ -588,6 +605,7 @@
         header: true,
         ticketInfo: true,
         messageBody: true,
+        kudosRating: false,
         ctaButton: false,
         bookingButton: true,
         kundenportal: false,
@@ -616,6 +634,7 @@
         header: false,
         ticketInfo: false,
         messageBody: true,
+        kudosRating: false,
         ctaButton: true,
         bookingButton: false,
         kundenportal: false,
@@ -653,6 +672,7 @@
         ticketInfo: true,
         iconBadge: true,
         messageBody: true,
+        kudosRating: false,
         ctaButton: false,
         bookingButton: false,
         kundenportal: false,
@@ -693,6 +713,7 @@
     { key: 'ticketInfo' },
     { key: 'iconBadge' },
     { key: 'messageBody' },
+    { key: 'kudosRating', hasTooltip: true },
     { key: 'ctaButton' },
     { key: 'bookingButton' },
     { key: 'kundenportal' },
@@ -864,6 +885,51 @@
     }
   }
 
+  // ── Kudos-Bewertungsblock ──
+  // Nachbau des Kudos Rating Snippets (RAT-01/02, erwins-enkel/kudos,
+  // src/lib/server/ratings/links.ts). Smileys sind gehostete PNGs von Kudos,
+  // kein Emoji — die Smiley-Emoji liegen außerhalb der BMP und kämen als „??" an.
+  const KUDOS_DEFAULT_ORIGIN = 'https://getkudos.eu';
+  const KUDOS_SCORES = [
+    { id: 'positive', color: '#1a7f37', label: { de: 'Sehr gut', en: 'Great' } },
+    { id: 'neutral', color: '#9a6700', label: { de: 'Zufrieden', en: 'OK' } },
+    { id: 'negative', color: '#cf222e', label: { de: 'Schlecht', en: 'Poor' } }
+  ];
+  const KUDOS_QUESTION = {
+    de: 'Wie zufrieden sind Sie mit unserem Service?',
+    en: 'How satisfied are you with our service?'
+  };
+
+  function kudosSlug(design) {
+    return (design.kudosSlug || '').trim();
+  }
+
+  function kudosActive(template, design) {
+    return !!(kudosSlug(design) && template.sections.kudosRating && template.audience !== 'internal');
+  }
+
+  function kudosOrigin(design) {
+    try {
+      const url = new URL(design.kudosHost);
+      if (url.protocol === 'https:' || url.protocol === 'http:') return url.origin;
+    } catch {
+      // leer oder keine URL → Kudos-Produktion
+    }
+    return KUDOS_DEFAULT_ORIGIN;
+  }
+
+  // Kudos kennt nur en und de; die Variablennamen folgen trotzdem der Zone.
+  function kudosLang() {
+    return varLang() === 'de' ? 'de' : 'en';
+  }
+
+  function kudosUrl(template, design, score) {
+    const n = template.kudosNotification === 'resolved' ? 'resolved' : 'updated';
+    return `${kudosOrigin(design)}/r/${encodeURIComponent(kudosSlug(design))}` +
+      `/${tokenFor('ticket.id')}/${tokenFor('contact.id')}/${score}` +
+      `?by=${tokenFor('misc.initiatingResourceEmail')}&n=${n}&lang=${kudosLang()}`;
+  }
+
   // ── Generate Email HTML — shared content sections ──
   function generateContentRows(template, design, useExampleData, style) {
     const d = design;
@@ -958,6 +1024,32 @@
         html += `            ${r(c.messageBodyVar)}\n`;
       }
 
+      html += `          </td>\n`;
+      html += `        </tr>\n\n`;
+    }
+
+    // Kudos-Bewertung
+    if (kudosActive(t, d)) {
+      const lang = kudosLang();
+      const origin = kudosOrigin(d);
+      html += `        <!-- KUDOS RATING -->\n`;
+      html += `        <tr>\n`;
+      html += `          <td style="padding:0 30px 28px 30px;" align="center">\n`;
+      html += `            <table role="presentation" cellpadding="0" cellspacing="0" border="0">\n`;
+      html += `              <tr>\n`;
+      html += `                <td colspan="3" style="padding:0 0 8px 0;font-size:14px;color:${d.textColor};text-align:center;font-family:${font};">${KUDOS_QUESTION[lang]}</td>\n`;
+      html += `              </tr>\n`;
+      html += `              <tr>\n`;
+      for (const score of KUDOS_SCORES) {
+        const href = useExampleData ? '#' : escapeHtml(kudosUrl(t, d, score.id));
+        const src = escapeHtml(`${origin}/snippet/${score.id}.png`);
+        // alt="": das Label daneben benennt die Bewertung, auch bei blockierten Bildern.
+        html += `                <td style="padding:0 12px;text-align:center;">`;
+        html += `<a href="${href}" style="text-decoration:none;color:${score.color};font-size:14px;font-family:${font};">`;
+        html += `<img src="${src}" width="48" height="48" alt="" style="display:block;margin:0 auto 4px;border:0;" />${score.label[lang]}</a></td>\n`;
+      }
+      html += `              </tr>\n`;
+      html += `            </table>\n`;
       html += `          </td>\n`;
       html += `        </tr>\n\n`;
     }
@@ -1423,6 +1515,15 @@
         if (c.messageBodyVar) blocks.push(r(c.messageBodyVar));
       }
 
+      if (kudosActive(t, d)) {
+        const lang = kudosLang();
+        const lines = [KUDOS_QUESTION[lang]];
+        for (const score of KUDOS_SCORES) {
+          lines.push(`${score.label[lang]}: ${r(kudosUrl(t, d, score.id))}`);
+        }
+        blocks.push(lines.join('\n'));
+      }
+
       if (s.ctaButton && c.ctaText) {
         const link = c.ctaLink ? r(c.ctaLink) : '';
         blocks.push(link ? `${r(c.ctaText)}: ${link}` : r(c.ctaText));
@@ -1510,6 +1611,8 @@
     const rawUrl = $('#ds-autotask-url').value.trim();
     state.design.autotaskUrl = (!rawUrl || /^https?:\/\//i.test(rawUrl)) ? rawUrl : '';
     state.design.autotaskLinkText = $('#ds-autotask-link-text').value;
+    state.design.kudosSlug = $('#ds-kudos-slug').value.trim();
+    state.design.kudosHost = $('#ds-kudos-host').value.trim();
   }
 
   // ── Write Design to UI ──
@@ -1544,6 +1647,8 @@
     $('#ds-autotask-zone').value = getZone().id;
     $('#ds-autotask-url').value = d.autotaskUrl || '';
     $('#ds-autotask-link-text').value = d.autotaskLinkText || '';
+    $('#ds-kudos-slug').value = d.kudosSlug || '';
+    $('#ds-kudos-host').value = d.kudosHost || '';
     updateZoneHint();
   }
 
@@ -1676,6 +1781,8 @@
     if (!template) return;
 
     for (const sec of SECTIONS) {
+      // Bewertungslinks richten sich an Kunden, intern ergibt der Schalter keinen Sinn.
+      if (sec.key === 'kudosRating' && template.audience === 'internal') continue;
       const div = document.createElement('div');
       div.className = 'section-toggle';
 
@@ -2083,6 +2190,11 @@
           // Vorschau-Beispiele sind nicht nutzer-editierbar: immer aus den
           // Defaults ziehen, damit gespeicherte Stände sie nachträglich bekommen.
           t.previewExamples = def.previewExamples;
+          t.kudosNotification = def.kudosNotification;
+          // Stände von vor der Kudos-Sektion: Default der Vorlage übernehmen.
+          if (t.sections && t.sections.kudosRating === undefined) {
+            t.sections.kudosRating = !!def.sections.kudosRating;
+          }
         } else if (!t.audience) {
           t.audience = 'customer';
         }
@@ -2644,7 +2756,8 @@
       '#ds-legal-vatid', '#ds-legal-imprint', '#ds-legal-privacy',
       '#ds-booking-url', '#ds-booking-text',
       '#ds-portal-url', '#ds-portal-text',
-      '#ds-autotask-url', '#ds-autotask-link-text'
+      '#ds-autotask-url', '#ds-autotask-link-text',
+      '#ds-kudos-slug', '#ds-kudos-host'
     ];
     for (const sel of designInputs) {
       $(sel).addEventListener('input', () => {
