@@ -11,7 +11,7 @@
   'use strict';
 
   // ── Sponsor / Support Links (easy to change) ──
-  const SPONSOR_GITHUB_URL = 'https://github.com/sponsors/kai-osthoff';
+  const SPONSOR_GITHUB_URL = 'https://github.com/sponsors/erwins-enkel';
   const COMPANY_URL = 'https://www.erwins-enkel.dev';
 
   // ── Oberflächensprache ──
