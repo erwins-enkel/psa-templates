@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/erwins-enkel/psa-templates/compare/psa-templates-v0.2.0...psa-templates-v0.2.1) (2026-10-04)
+
+
+### Bug Fixes
+
+* **ui:** Sponsors-Link auf erwins-enkel umstellen ([#59](https://github.com/erwins-enkel/psa-templates/issues/59)) ([5f6522f](https://github.com/erwins-enkel/psa-templates/commit/5f6522f023d7b5739fa039ce9342082aacaff0cd))
+
 ## [0.2.0](https://github.com/erwins-enkel/psa-templates/compare/psa-templates-v0.1.0...psa-templates-v0.2.0) (2026-10-04)
 
 
