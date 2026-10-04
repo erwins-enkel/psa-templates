@@ -23,6 +23,12 @@ Sichtbarer Produktname: **erwins enkel — PSA Templates**.
 > `https://www.erwins-enkel.dev/impressum`.** Ändern sich dort Anschrift,
 > Geschäftsführung oder Registerdaten, hier nachziehen.
 
+> **Die Projektkarte auf `https://www.erwins-enkel.dev` liegt in einem anderen Repo:**
+> `erwins-enkel/enkels-web` → `components/landing/projects.tsx` (Array `projects`,
+> Eintrag `name: "PSA Templates"`). Sie darf kein „Open Source" behaupten — die Lizenz
+> ist BUSL-1.1 (`LICENSE`), also source-available, nicht Open Source. Ändert sich Lizenz
+> oder Sichtbarkeit, dort nachziehen.
+
 ## Deploy
 
 - **Auto-Deploy** via Vercel GitHub-Integration: jeder Push auf `main` → Production.
@@ -43,6 +49,13 @@ Kein Dev-Server-Script. Statisch servieren, z.B.:
   deutscher Beschreibung und Beispielwert. Zugleich die Übersetzungstabelle beim Zonenwechsel.
 - `psa/autotask/catalog.{de,en,es}.json` — Vollkatalog (1.458 Variablen je Sprache),
   generiert, nicht von Hand pflegen. Wird erst beim Öffnen des Variablen-Pickers geladen.
+- `presets/*.json` — drei fertige Konfigurationen, ladbar über `?preset=<id>` und über das
+  Menü in der Top-Bar. Sie enthalten **nur das Delta** zu den Defaults (Style,
+  Landing-Vorlage, Design-Werte, Section-Schalter, `config.notificationType`) und
+  **keinen Vorlagentext** — der käme aus `i18n/*.json` und veraltete sonst bei jeder
+  Textänderung. Namen und Beschreibungen stehen unter `preset.<id>.*` in den
+  Locale-Dateien, die Allowlist ist `PRESETS` in `app.js`.
+  `python3 tools/check-presets.py` prüft die Invarianten offline.
 - `tools/build-psa-catalog.py` — erzeugt die Kataloge aus den offiziellen Autotask-Tabellen;
   `--check` validiert `curated.json` dagegen (offline)
 - `vercel.json` — CSP/Security-Header
@@ -67,6 +80,25 @@ Kein Dev-Server-Script. Statisch servieren, z.B.:
   `[Ticket: Titel]` löst in einer englischen Instanz nicht auf und umgekehrt. Die Zone steht
   in `design.autotaskZone` (Default `ww18`); Tokens im Code entstehen ausschließlich über
   `tokenFor('<kuratierter Schlüssel>')`, nie als Literal.
+- **Drei Sprachachsen, bewusst getrennt.** Sie dürfen alle drei auseinanderfallen:
+
+  | Achse | State | Quelle | Wirkt auf |
+  |---|---|---|---|
+  | Oberflächensprache | `design.uiLang` | `?lang=` → Stand → `navigator` | Sidebar, Buttons, Toasts |
+  | Vorlagensprache | `design.templateLang` | Umschalter, sonst aus der Zone | Prosa der erzeugten Mail |
+  | Variablensprache | abgeleitet | `zoneById(design.autotaskZone).lang` | die `[…]`-Tokens |
+
+  Eine englische Vorlage in einer deutschen Zone erzeugt englischen Fließtext mit **deutschen**
+  Variablennamen — das ist kein Fehler, sondern der Zweck der Trennung. `design.templateLang`
+  ist `null`, solange die Sprache der Zone folgt; spanische Zonen fallen auf Englisch zurück,
+  weil es keine spanischen Vorlagentexte gibt.
+- **Vorlagentexte stehen ausschließlich in `i18n/{de,en}.json`**, nicht in `app.js`. Dort liegt
+  unter `TEMPLATE_SPECS` nur noch die Struktur (Sections, Farben, Audience). Variablen stehen in
+  den Locale-Texten als `{{kuratierter.schlüssel}}` und werden erst beim Materialisieren über
+  `tokenFor()` zum Token der Zonensprache — ein fertiges `[Satz: Feld]` gehört in keine
+  Locale-Datei. Auch die Wortmarken der erzeugten Mail (`Status:`, `GF:`, `Impressum` …) liegen
+  dort unter `out.*` und folgen der **Vorlagen**sprache, nicht der Oberfläche: sie landen beim
+  Empfänger. `python3 tools/check-i18n.py` prüft diese Regeln offline.
 
 ## Konventionen
 
