@@ -17,6 +17,9 @@ Browser-basierter Template-Generator fuer professionelle E-Mail-Vorlagen in Auto
   (`ww18` deutsch, `ww12` spanisch, uebrige englisch) und werden beim Zonenwechsel uebersetzt
 - Drei fertige Presets unter `presets/`, ladbar per `?preset=<id>` oder aus der Top-Bar —
   ein Link fuehrt damit auf ein fertiges Ergebnis statt auf den Demo-Stand
+- [Kudos](https://github.com/erwins-enkel/kudos)-Bewertungslinks: mit eingetragenem
+  Kudos-Slug bekommen Ticket-Note, Ticket geschlossen und Umfrage drei Score-Links
+  (Section „Kudos-Bewertung", je Vorlage schaltbar)
 - Live-Preview (Desktop / Mobile)
 - Code-Export mit PSA-Variablen — als HTML **und** als Plain-Text fuer das
   Autotask-Feld „Nur Text"
